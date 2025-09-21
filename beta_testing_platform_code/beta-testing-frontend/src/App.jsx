@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react'
 import LoginForm from './components/LoginForm'
+import SignUpForm from './components/SignUpForm'
 import Dashboard from './components/Dashboard'
 import './App.css'
 
 function App() {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showSignUp, setShowSignUp] = useState(false)
 
   useEffect(() => {
     // Check if user is already logged in
@@ -41,6 +43,20 @@ function App() {
     }
   }
 
+  const handleShowSignUp = () => {
+    setShowSignUp(true)
+  }
+
+  const handleBackToLogin = () => {
+    setShowSignUp(false)
+  }
+
+  const handleSignUp = (username) => {
+    setUser(username)
+    localStorage.setItem('user', username)
+    setShowSignUp(false)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -56,8 +72,10 @@ function App() {
     <div className="App">
       {user ? (
         <Dashboard username={user} onLogout={handleLogout} />
+      ) : showSignUp ? (
+        <SignUpForm onSignUp={handleSignUp} onBackToLogin={handleBackToLogin} />
       ) : (
-        <LoginForm onLogin={handleLogin} />
+        <LoginForm onLogin={handleLogin} onShowSignUp={handleShowSignUp} />
       )}
     </div>
   )

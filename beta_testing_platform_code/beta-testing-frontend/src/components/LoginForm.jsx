@@ -4,9 +4,9 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { Alert, AlertDescription } from '@/components/ui/alert'
-import { LogIn } from 'lucide-react'
+import { LogIn, UserPlus } from 'lucide-react'
 
-const LoginForm = ({ onLogin }) => {
+const LoginForm = ({ onLogin, onShowSignUp }) => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
@@ -18,23 +18,30 @@ const LoginForm = ({ onLogin }) => {
     setError('')
 
     try {
-      const response = await fetch('/api/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      })
+      // Check against stored users
+      const users = JSON.parse(localStorage.getItem('users') || '[]')
+      const user = users.find(u => u.username === username && u.password === password)
 
-      const data = await response.json()
-
-      if (response.ok) {
-        onLogin(data.username)
+      if (user) {
+        onLogin(username)
       } else {
-        setError(data.error || 'Login failed')
+        // Check demo credentials
+        const demoUsers = [
+          { username: 'tester1', password: 'password123' },
+          { username: 'tester2', password: 'password456' },
+          { username: 'tester3', password: 'password789' }
+        ]
+        
+        const demoUser = demoUsers.find(u => u.username === username && u.password === password)
+        
+        if (demoUser) {
+          onLogin(username)
+        } else {
+          setError('Invalid username or password')
+        }
       }
     } catch (err) {
-      setError('Network error. Please try again.')
+      setError('Login failed. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -85,7 +92,19 @@ const LoginForm = ({ onLogin }) => {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
-          <div className="mt-6 text-center text-sm text-gray-600">
+          
+          <div className="mt-6 text-center">
+            <Button
+              variant="outline"
+              onClick={onShowSignUp}
+              className="w-full"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Create New Account
+            </Button>
+          </div>
+          
+          <div className="mt-4 text-center text-sm text-gray-600">
             <p>Demo credentials:</p>
             <p>tester1 / password123</p>
             <p>tester2 / password456</p>
