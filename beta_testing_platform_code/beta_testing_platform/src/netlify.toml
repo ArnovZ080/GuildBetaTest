@@ -1,0 +1,4 @@
+[build]
+  base = "beta_testing_platform_code/beta-testing-frontend/"
+  publish = "beta_testing_platform_code/beta-testing-frontend/dist/"
+  command = "npm run build"
