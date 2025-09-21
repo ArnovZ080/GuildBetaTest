@@ -14,12 +14,10 @@ function App() {
 
   const checkAuthStatus = async () => {
     try {
-      const response = await fetch('/api/status')
-      if (response.ok) {
-        const data = await response.json()
-        if (data.authenticated) {
-          setUser(data.username)
-        }
+      // For demo purposes, check localStorage for user session
+      const savedUser = localStorage.getItem('user')
+      if (savedUser) {
+        setUser(savedUser)
       }
     } catch (err) {
       console.error('Auth check failed:', err)
@@ -30,11 +28,12 @@ function App() {
 
   const handleLogin = (username) => {
     setUser(username)
+    localStorage.setItem('user', username)
   }
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/logout', { method: 'POST' })
+      localStorage.removeItem('user')
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {

@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request
 from src.models.feedback import Feedback, db
 import os
+import json
 from datetime import datetime
 
 # Try to import gspread, but make it optional for deployment
@@ -14,7 +15,6 @@ feedback_bp = Blueprint('feedback', __name__)
 
 # Google Sheets configuration
 SPREADSHEET_NAME = 'Beta Tester Feedback'
-SERVICE_ACCOUNT_KEY_FILE = os.path.join(os.path.dirname(__file__), '..', 'config', 'service_account.json')
 
 def append_to_google_sheet(feedback_data):
     """Append feedback data to Google Sheets"""
@@ -23,13 +23,17 @@ def append_to_google_sheet(feedback_data):
         return False
         
     try:
-        # Check if service account file exists
-        if not os.path.exists(SERVICE_ACCOUNT_KEY_FILE):
-            print(f"Service account file not found at {SERVICE_ACCOUNT_KEY_FILE}")
+        # Get service account credentials from environment variable
+        service_account_json = os.getenv('GOOGLE_SERVICE_ACCOUNT')
+        if not service_account_json:
+            print("GOOGLE_SERVICE_ACCOUNT environment variable not set")
             return False
             
-        # Authenticate with Google Sheets
-        gc = gspread.service_account(filename=SERVICE_ACCOUNT_KEY_FILE)
+        # Parse the JSON string from environment variable
+        service_account_info = json.loads(service_account_json)
+            
+        # Authenticate with Google Sheets using credentials dict
+        gc = gspread.service_account_from_dict(service_account_info)
         
         # Open the spreadsheet
         spreadsheet = gc.open(SPREADSHEET_NAME)
