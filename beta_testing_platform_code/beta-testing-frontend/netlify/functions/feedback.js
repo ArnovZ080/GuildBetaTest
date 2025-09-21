@@ -102,18 +102,32 @@ exports.handler = async (event, context) => {
 // Google Sheets integration function
 async function syncToGoogleSheets(feedbackData) {
   try {
+    console.log('Starting Google Sheets sync...');
+    
     // Check if Google Sheets credentials are available
     const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT;
     if (!serviceAccountJson) {
-      console.log('GOOGLE_SERVICE_ACCOUNT not set, skipping Google Sheets sync');
+      console.log('❌ GOOGLE_SERVICE_ACCOUNT not set, skipping Google Sheets sync');
       return false;
     }
 
+    // Get the spreadsheet ID from environment
+    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
+    if (!spreadsheetId) {
+      console.log('❌ GOOGLE_SHEET_ID not set, skipping Google Sheets sync');
+      return false;
+    }
+
+    console.log('✅ Environment variables found');
+    console.log('📊 Spreadsheet ID:', spreadsheetId);
+
     // Parse the service account JSON
     const serviceAccount = JSON.parse(serviceAccountJson);
+    console.log('✅ Service account parsed, email:', serviceAccount.client_email);
     
-    // Import gspread dynamically
+    // Import googleapis dynamically
     const { google } = await import('googleapis');
+    console.log('✅ Google APIs imported');
     
     // Create JWT client
     const auth = new google.auth.JWT(
@@ -123,15 +137,11 @@ async function syncToGoogleSheets(feedbackData) {
       ['https://www.googleapis.com/auth/spreadsheets']
     );
 
+    console.log('✅ JWT auth created');
+
     // Create sheets API client
     const sheets = google.sheets({ version: 'v4', auth });
-    
-    // Get the spreadsheet ID from environment
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID;
-    if (!spreadsheetId) {
-      console.log('GOOGLE_SHEET_ID not set, skipping Google Sheets sync');
-      return false;
-    }
+    console.log('✅ Sheets API client created');
 
     // Prepare the data to append
     const values = [
@@ -146,19 +156,26 @@ async function syncToGoogleSheets(feedbackData) {
       ]
     ];
 
+    console.log('📝 Data to append:', values);
+
     // Append to the sheet
-    await sheets.spreadsheets.values.append({
+    const result = await sheets.spreadsheets.values.append({
       spreadsheetId: spreadsheetId,
       range: 'Sheet1!A:G',
       valueInputOption: 'RAW',
       resource: { values }
     });
 
-    console.log('Successfully synced to Google Sheets');
+    console.log('✅ Successfully synced to Google Sheets:', result.data);
     return true;
 
   } catch (error) {
-    console.error('Google Sheets sync error:', error);
+    console.error('❌ Google Sheets sync error:', error);
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      status: error.status
+    });
     return false;
   }
 }
