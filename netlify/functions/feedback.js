@@ -1,64 +1,5 @@
-const { google } = require('googleapis');
-
-// Google Sheets configuration
-const SPREADSHEET_NAME = 'Beta Tester Feedback';
-
-// Helper function to get Google Sheets client
-async function getSheetsClient() {
-  try {
-    const serviceAccountJson = process.env.GOOGLE_SERVICE_ACCOUNT;
-    if (!serviceAccountJson) {
-      throw new Error('GOOGLE_SERVICE_ACCOUNT environment variable not set');
-    }
-
-    const serviceAccount = JSON.parse(serviceAccountJson);
-    const auth = new google.auth.GoogleAuth({
-      credentials: serviceAccount,
-      scopes: ['https://www.googleapis.com/auth/spreadsheets']
-    });
-
-    return google.sheets({ version: 'v4', auth });
-  } catch (error) {
-    console.error('Error setting up Google Sheets client:', error);
-    throw error;
-  }
-}
-
-// Helper function to append to Google Sheets
-async function appendToGoogleSheet(feedbackData) {
-  try {
-    const sheets = await getSheetsClient();
-    
-    // Prepare row data
-    const rowData = [
-      feedbackData.timestamp,
-      feedbackData.tester_name,
-      feedbackData.submission_type,
-      feedbackData.title,
-      feedbackData.description,
-      feedbackData.severity || '',
-      feedbackData.status || 'New'
-    ];
-
-    // Get the spreadsheet ID from environment variable or use a default
-    const spreadsheetId = process.env.GOOGLE_SHEET_ID || '1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms'; // Replace with your actual sheet ID
-    
-    // Append the row to the spreadsheet
-    const response = await sheets.spreadsheets.values.append({
-      spreadsheetId: spreadsheetId,
-      range: 'Sheet1!A:G',
-      valueInputOption: 'RAW',
-      resource: {
-        values: [rowData]
-      }
-    });
-
-    return response.data;
-  } catch (error) {
-    console.error('Error appending to Google Sheets:', error);
-    throw error;
-  }
-}
+// Simple feedback handler without external dependencies for now
+// TODO: Add Google Sheets integration once basic function works
 
 exports.handler = async (event, context) => {
   // Set CORS headers
@@ -110,15 +51,9 @@ exports.handler = async (event, context) => {
         status: 'New'
       };
 
-      // Try to append to Google Sheets
+      // TODO: Add Google Sheets integration
       let sheetsSuccess = false;
-      try {
-        await appendToGoogleSheet(processedData);
-        sheetsSuccess = true;
-      } catch (error) {
-        console.error('Google Sheets sync failed:', error);
-        // Continue without failing the request
-      }
+      console.log('Feedback received:', processedData);
 
       // Return success response
       return {
