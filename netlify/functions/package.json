@@ -1,0 +1,8 @@
+{
+  "name": "netlify-functions",
+  "version": "1.0.0",
+  "description": "Netlify Functions for Beta Testing Platform",
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

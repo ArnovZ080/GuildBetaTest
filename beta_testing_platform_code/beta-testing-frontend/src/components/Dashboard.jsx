@@ -13,13 +13,15 @@ const Dashboard = ({ username, onLogout }) => {
     fetchFeedbackHistory()
   }, [])
 
-  const fetchFeedbackHistory = () => {
+  const fetchFeedbackHistory = async () => {
     try {
-      // Get feedback from localStorage
-      const allFeedback = JSON.parse(localStorage.getItem('feedback') || '[]')
-      // Filter to show only current user's feedback
-      const userFeedback = allFeedback.filter(item => item.tester_name === username)
-      setFeedbackHistory(userFeedback)
+      const response = await fetch('/.netlify/functions/feedback')
+      if (response.ok) {
+        const data = await response.json()
+        // Filter to show only current user's feedback
+        const userFeedback = data.filter(item => item.tester_name === username)
+        setFeedbackHistory(userFeedback)
+      }
     } catch (err) {
       console.error('Failed to fetch feedback history:', err)
     } finally {

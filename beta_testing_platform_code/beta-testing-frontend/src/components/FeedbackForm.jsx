@@ -33,56 +33,43 @@ const FeedbackForm = ({ username, onSubmissionSuccess }) => {
     setSuccess(false)
 
     try {
-      // Create feedback entry
-      const feedbackEntry = {
-        id: Date.now().toString(),
-        tester_name: username,
-        title: formData.title,
-        description: formData.description,
-        submission_type: formData.submission_type,
-        severity: formData.severity || null,
-        status: 'New',
-        timestamp: new Date().toISOString(),
-        sheets_synced: false // Will be true when Google Sheets integration is added
-      }
-
-      // Get existing feedback from localStorage
-      const existingFeedback = JSON.parse(localStorage.getItem('feedback') || '[]')
-      
-      // Add new feedback
-      existingFeedback.push(feedbackEntry)
-      
-      // Save back to localStorage
-      localStorage.setItem('feedback', JSON.stringify(existingFeedback))
-
-      // Simulate Google Sheets sync (in a real app, this would be an API call)
-      setTimeout(() => {
-        // Update the entry to show it was synced
-        const updatedFeedback = JSON.parse(localStorage.getItem('feedback') || '[]')
-        const updatedEntry = updatedFeedback.find(item => item.id === feedbackEntry.id)
-        if (updatedEntry) {
-          updatedEntry.sheets_synced = true
-          localStorage.setItem('feedback', JSON.stringify(updatedFeedback))
-        }
-      }, 1000)
-
-      setSuccess(true)
-      setFormData({
-        title: '',
-        description: '',
-        submission_type: '',
-        severity: ''
+      const response = await fetch('/.netlify/functions/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          tester_name: username,
+          title: formData.title,
+          description: formData.description,
+          submission_type: formData.submission_type,
+          severity: formData.severity || null
+        }),
       })
 
-      // Notify parent component to refresh
-      if (onSubmissionSuccess) {
-        onSubmissionSuccess()
-      }
+      const data = await response.json()
 
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => setSuccess(false), 3000)
+      if (response.ok) {
+        setSuccess(true)
+        setFormData({
+          title: '',
+          description: '',
+          submission_type: '',
+          severity: ''
+        })
+
+        // Notify parent component to refresh
+        if (onSubmissionSuccess) {
+          onSubmissionSuccess()
+        }
+
+        // Auto-hide success message after 3 seconds
+        setTimeout(() => setSuccess(false), 3000)
+      } else {
+        setError(data.error || 'Submission failed')
+      }
     } catch (err) {
-      setError('Failed to save submission. Please try again.')
+      setError('Network error. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -170,7 +157,7 @@ const FeedbackForm = ({ username, onSubmissionSuccess }) => {
             <Alert className="border-green-200 bg-green-50">
               <CheckCircle className="w-4 h-4 text-green-600" />
               <AlertDescription className="text-green-800">
-                Your submission has been recorded successfully! It will be synced to Google Sheets when the backend is connected.
+                Your submission has been recorded successfully and synced to Google Sheets!
               </AlertDescription>
             </Alert>
           )}
