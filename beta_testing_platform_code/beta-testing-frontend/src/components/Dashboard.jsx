@@ -13,15 +13,13 @@ const Dashboard = ({ username, onLogout }) => {
     fetchFeedbackHistory()
   }, [])
 
-  const fetchFeedbackHistory = async () => {
+  const fetchFeedbackHistory = () => {
     try {
-      const response = await fetch('/api/feedback')
-      if (response.ok) {
-        const data = await response.json()
-        // Filter to show only current user's feedback
-        const userFeedback = data.filter(item => item.tester_name === username)
-        setFeedbackHistory(userFeedback)
-      }
+      // Get feedback from localStorage
+      const allFeedback = JSON.parse(localStorage.getItem('feedback') || '[]')
+      // Filter to show only current user's feedback
+      const userFeedback = allFeedback.filter(item => item.tester_name === username)
+      setFeedbackHistory(userFeedback)
     } catch (err) {
       console.error('Failed to fetch feedback history:', err)
     } finally {
@@ -115,7 +113,7 @@ const Dashboard = ({ username, onLogout }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Feedback Form */}
           <div>
-            <FeedbackForm username={username} />
+            <FeedbackForm username={username} onSubmissionSuccess={fetchFeedbackHistory} />
           </div>
 
           {/* Feedback History */}
