@@ -1,5 +1,32 @@
-// Feedback handler with in-memory storage and Google Sheets integration
-let feedbackStorage = []; // In-memory storage for feedback
+// Feedback handler with persistent storage and Google Sheets integration
+const fs = require('fs');
+const path = require('path');
+
+// File path for persistent storage
+const STORAGE_FILE = '/tmp/feedback_storage.json';
+
+// Load existing feedback from file
+function loadFeedback() {
+  try {
+    if (fs.existsSync(STORAGE_FILE)) {
+      const data = fs.readFileSync(STORAGE_FILE, 'utf8');
+      return JSON.parse(data);
+    }
+  } catch (error) {
+    console.error('Error loading feedback storage:', error);
+  }
+  return [];
+}
+
+// Save feedback to file
+function saveFeedback(feedbackArray) {
+  try {
+    fs.writeFileSync(STORAGE_FILE, JSON.stringify(feedbackArray, null, 2));
+    console.log('✅ Feedback saved to persistent storage');
+  } catch (error) {
+    console.error('❌ Error saving feedback storage:', error);
+  }
+}
 
 exports.handler = async (event, context) => {
   // Set CORS headers
@@ -21,7 +48,9 @@ exports.handler = async (event, context) => {
 
   try {
     if (event.httpMethod === 'GET') {
-      // Return all stored feedback
+      // Load and return all stored feedback
+      const feedbackStorage = loadFeedback();
+      console.log(`📊 Returning ${feedbackStorage.length} feedback items`);
       return {
         statusCode: 200,
         headers,
@@ -53,9 +82,11 @@ exports.handler = async (event, context) => {
         sheets_synced: false
       };
 
-      // Store in memory
+      // Load existing feedback and add new one
+      const feedbackStorage = loadFeedback();
       feedbackStorage.push(processedData);
-      console.log('Feedback stored:', processedData);
+      saveFeedback(feedbackStorage);
+      console.log('✅ Feedback stored persistently:', processedData);
 
       // Try to sync to Google Sheets
       let sheetsSuccess = false;
@@ -63,9 +94,11 @@ exports.handler = async (event, context) => {
         sheetsSuccess = await syncToGoogleSheets(processedData);
         if (sheetsSuccess) {
           // Update the stored data to reflect successful sync
-          const index = feedbackStorage.findIndex(item => item.id === processedData.id);
+          const updatedStorage = loadFeedback();
+          const index = updatedStorage.findIndex(item => item.id === processedData.id);
           if (index !== -1) {
-            feedbackStorage[index].sheets_synced = true;
+            updatedStorage[index].sheets_synced = true;
+            saveFeedback(updatedStorage);
           }
         }
       } catch (sheetsError) {
